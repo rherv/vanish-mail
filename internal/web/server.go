@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"placemail/internal/smtp"
+	"placemail/internal/util"
 )
 
 type app struct {
@@ -15,6 +16,7 @@ type app struct {
 	router        *mux.Router
 	inboxTemplate *template.Template
 	homeTemplate  *template.Template
+	domain        string
 }
 
 type pageData struct {
@@ -48,7 +50,7 @@ func (a *app) inbox(w http.ResponseWriter, r *http.Request) {
 
 func (a *app) home(w http.ResponseWriter, r *http.Request) {
 	data := pageData{
-		Email: "placeholder@localhost",
+		Email: util.GenerateEmail(a.domain),
 	}
 
 	err := a.homeTemplate.Execute(w, data)
@@ -84,6 +86,7 @@ func Init(domain string, httpPort int, mailPort int) {
 		router:     mux.NewRouter(),
 	}
 
+	a.domain = domain
 	a.smtpServer.Start()
 	a.routes()
 	a.templates()
