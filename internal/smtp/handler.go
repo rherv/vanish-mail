@@ -5,14 +5,16 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"sync"
 	"time"
 
 	"github.com/emersion/go-smtp"
 )
 
 type SmtpServer struct {
-	MailChannel chan Mail
-	Server      *smtp.Server
+	Mail   map[string][]Mail
+	Server *smtp.Server
+	mu     sync.RWMutex
 }
 
 func (s *SmtpServer) Start() {
@@ -46,7 +48,7 @@ func NewSmtpServer(domain string, port int) *SmtpServer {
 	s.AllowInsecureAuth = true
 
 	mailServer.Server = s
-	mailServer.MailChannel = make(chan Mail)
+	mailServer.Mail = make(map[string][]Mail)
 
 	return mailServer
 }
@@ -91,8 +93,9 @@ func (s *smtpSession) Data(r io.Reader) error {
 		return err
 	} else {
 		s.mail.Data = string(b)
-		s.server.MailChannel <- s.mail
 	}
+	s.AppendMail()
+
 	return nil
 }
 
@@ -100,4 +103,15 @@ func (s *smtpSession) Reset() {}
 
 func (s *smtpSession) Logout() error {
 	return nil
+}
+
+func (s *smtpSession) AppendMail() {
+	s.server.mu.Lock()
+	defer s.server.mu.Unlock()
+
+	if _, ok := s.server.Mail[s.mail.To]; !ok {
+		s.server.Mail[s.mail.To] = make([]Mail, 0)
+	}
+
+	s.server.Mail[s.mail.To] = append(s.server.Mail[s.mail.To], s.mail)
 }

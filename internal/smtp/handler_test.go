@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"testing"
+	"time"
 )
 
 func TestSmtpServer(t *testing.T) {
@@ -35,10 +36,14 @@ func TestSmtpServer(t *testing.T) {
 		t.Error(err)
 	}
 
-	mail, ok := <-mailServer.MailChannel
+	time.Sleep(1 * time.Second)
+
+	mails, ok := mailServer.Mail[recipient]
 	if !ok {
-		t.Error("failed to read mail channel")
+		t.Error("failed to read mail map")
 	}
+
+	mail := mails[0]
 
 	if mail.From != sender || mail.To != recipient || mail.Data != data+"\r\n" {
 		t.Errorf("invalid mail data")
