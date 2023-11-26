@@ -1,26 +1,51 @@
 package web
 
 import (
+	"embed"
 	"fmt"
 	"github.com/gorilla/mux"
+	"html/template"
+	"log"
 	"net/http"
 	"placemail/internal/smtp"
 )
 
 type app struct {
-	smtpServer *smtp.SmtpServer
-	router     *mux.Router
+	smtpServer    *smtp.SmtpServer
+	router        *mux.Router
+	inboxTemplate *template.Template
 }
+
+type inboxData struct {
+	Email string
+}
+
+//go:embed templates/inbox.html
+var inboxTemplate embed.FS
 
 func (a *app) inbox(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
 	email := vars["email"]
 
-	_, err := fmt.Fprintf(w, email)
+	data := inboxData{
+		Email: email,
+	}
+
+	err := a.inboxTemplate.Execute(w, data)
 	if err != nil {
 		return
 	}
+}
+
+func (a *app) templates() {
+	tmpl, err := template.ParseFS(inboxTemplate, "templates/inbox.html")
+	if err != nil {
+		log.Println("error here wtf")
+		log.Fatalln(err)
+	}
+
+	a.inboxTemplate = tmpl
 }
 
 func (a *app) routes() {
@@ -35,6 +60,7 @@ func Init(domain string, httpPort int, mailPort int) {
 
 	a.smtpServer.Start()
 	a.routes()
+	a.templates()
 
 	addr := fmt.Sprintf("%s:%d", domain, httpPort)
 
