@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Placemail</title>
+</head>
+<body>
+    <h1>Welcome to Placemail</h1>
+
+    <h2>random inbox:</h2>
+
+    <span>
+        {{ .Email }}
+
+        <a href="/inbox/{{ .Email }}">(click here to view inbox)</a>
+    </span>
+</body>
+</html>
