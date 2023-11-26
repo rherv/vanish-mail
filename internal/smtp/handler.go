@@ -25,9 +25,11 @@ func (s *SmtpServer) Start() {
 }
 
 type Mail struct {
-	From string
-	To   string
-	Data string
+	From      string
+	To        string
+	Data      string
+	Creation  time.Time
+	Timestamp string
 }
 
 func NewSmtpServer(domain string, port int) *SmtpServer {

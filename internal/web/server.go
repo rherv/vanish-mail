@@ -8,6 +8,8 @@ import (
 	"log"
 	"net/http"
 	"placemail/internal/smtp"
+	"placemail/internal/util"
+	"time"
 )
 
 type app struct {
@@ -18,6 +20,7 @@ type app struct {
 
 type inboxData struct {
 	Email string
+	Mail  []smtp.Mail
 }
 
 //go:embed templates/inbox.html
@@ -30,6 +33,15 @@ func (a *app) inbox(w http.ResponseWriter, r *http.Request) {
 
 	data := inboxData{
 		Email: email,
+		Mail: []smtp.Mail{
+			{
+				From:      "sender_test@localhost",
+				To:        "recipient_test@localhost",
+				Data:      "Hello World!",
+				Creation:  time.Now().Add(-10 * time.Minute),
+				Timestamp: util.GenerateTimestamp(time.Now().Add(-61 * time.Minute)),
+			},
+		},
 	}
 
 	err := a.inboxTemplate.Execute(w, data)
