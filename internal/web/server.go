@@ -8,8 +8,6 @@ import (
 	"log"
 	"net/http"
 	"placemail/internal/smtp"
-	"placemail/internal/util"
-	"time"
 )
 
 type app struct {
@@ -28,20 +26,19 @@ var inboxTemplate embed.FS
 
 func (a *app) inbox(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-
+	var data inboxData
 	email := vars["email"]
 
-	data := inboxData{
-		Email: email,
-		Mail: []smtp.Mail{
-			{
-				From:      "sender_test@localhost",
-				To:        "recipient_test@localhost",
-				Data:      "Hello World!",
-				Creation:  time.Now().Add(-10 * time.Minute),
-				Timestamp: util.GenerateTimestamp(time.Now().Add(-61 * time.Minute)),
-			},
-		},
+	mail, ok := a.smtpServer.Mail[email]
+	if !ok {
+		data = inboxData{
+			Email: email,
+		}
+	} else {
+		data = inboxData{
+			Email: email,
+			Mail:  mail,
+		}
 	}
 
 	err := a.inboxTemplate.Execute(w, data)

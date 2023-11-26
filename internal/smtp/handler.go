@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"placemail/internal/util"
 	"sync"
 	"time"
 
@@ -18,10 +19,36 @@ type SmtpServer struct {
 }
 
 func (s *SmtpServer) Start() {
+	s.RemoveOldMail()
+
 	go func() {
 		log.Println("Starting server at", s.Server.Addr)
 		if err := s.Server.ListenAndServe(); err != nil {
 			log.Fatal(err)
+		}
+	}()
+}
+
+func (s *SmtpServer) RemoveOldMail() {
+	go func() {
+		for {
+			time.Sleep(time.Second * 10)
+
+			s.mu.Lock()
+
+			for email, mails := range s.Mail {
+				var newMail []Mail
+				for _, mail := range mails {
+					if time.Now().Sub(mail.Creation) <= time.Minute*10 {
+						mail.Timestamp = util.GenerateTimestamp(mail.Creation)
+						newMail = append(newMail, mail)
+					}
+				}
+
+				s.Mail[email] = newMail
+			}
+
+			s.mu.Unlock()
 		}
 	}()
 }
@@ -94,6 +121,9 @@ func (s *smtpSession) Data(r io.Reader) error {
 	} else {
 		s.mail.Data = string(b)
 	}
+
+	s.mail.Creation = time.Now()
+	s.mail.Timestamp = util.GenerateTimestamp(s.mail.Creation)
 	s.AppendMail()
 
 	return nil
