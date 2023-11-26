@@ -1,4 +1,4 @@
-package mailserver
+package smtp
 
 import (
 	"fmt"

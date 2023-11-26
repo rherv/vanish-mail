@@ -1,4 +1,4 @@
-package mailserver
+package smtp
 
 import (
 	"errors"
@@ -16,10 +16,12 @@ type SmtpServer struct {
 }
 
 func (s *SmtpServer) Start() {
-	log.Println("Starting server at", s.Server.Addr)
-	if err := s.Server.ListenAndServe(); err != nil {
-		log.Fatal(err)
-	}
+	go func() {
+		log.Println("Starting server at", s.Server.Addr)
+		if err := s.Server.ListenAndServe(); err != nil {
+			log.Fatal(err)
+		}
+	}()
 }
 
 type Mail struct {
@@ -53,6 +55,8 @@ type smtpSession struct {
 }
 
 func (s *SmtpServer) NewSession(c *smtp.Conn) (smtp.Session, error) {
+	_ = c
+
 	return &smtpSession{
 		mail:   Mail{},
 		server: s,
@@ -61,19 +65,21 @@ func (s *SmtpServer) NewSession(c *smtp.Conn) (smtp.Session, error) {
 
 func (s *smtpSession) AuthPlain(username, password string) error {
 	if username != "username" || password != "password" {
-		return errors.New("Invalid username or password")
+		return errors.New("invalid username or password")
 	}
 	return nil
 }
 
 func (s *smtpSession) Mail(from string, opts *smtp.MailOptions) error {
-	//log.Println("Mail from:", from)
+	_ = opts
+
 	s.mail.From = from
 	return nil
 }
 
 func (s *smtpSession) Rcpt(to string, opts *smtp.RcptOptions) error {
-	//log.Println("Rcpt to:", to)
+	_ = opts
+
 	s.mail.To = to
 	return nil
 }

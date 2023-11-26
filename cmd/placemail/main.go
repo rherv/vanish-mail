@@ -1,8 +1,9 @@
 package main
 
-import "placemail/internal/mailserver"
+import (
+	"placemail/internal/web"
+)
 
 func main() {
-	mailServer := mailserver.NewSmtpServer("localhost", 1025)
-	mailServer.Start()
+	web.Init("localhost", 8080, 1025)
 }
