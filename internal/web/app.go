@@ -3,6 +3,7 @@ package web
 import (
 	"embed"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"html/template"
 	"log"
@@ -16,14 +17,19 @@ type App struct {
 	router        *mux.Router
 	inboxTemplate *template.Template
 	homeTemplate  *template.Template
+	mailTemplate  *template.Template
 	Domain        string
 	delay         int
 }
 
 type pageData struct {
-	Email string
-	Mail  []smtp.Mail
-	Delay int
+	Email     string
+	Mail      []smtp.Mail
+	Delay     int
+	Subject   string
+	Sender    string
+	Recipient string
+	Html      template.HTML
 }
 
 //go:embed templates/inbox.html
@@ -31,6 +37,9 @@ var inboxTemplate embed.FS
 
 //go:embed templates/home.html
 var homeTemplate embed.FS
+
+//go:embed templates/mail.html
+var mailTemplate embed.FS
 
 func (a *App) inbox(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
@@ -40,8 +49,13 @@ func (a *App) inbox(w http.ResponseWriter, r *http.Request) {
 	data.Delay = a.delay
 
 	mail, ok := a.SmtpServer.Mail[email]
+	var mails []smtp.Mail
+	for _, value := range mail {
+		mails = append(mails, value)
+	}
+
 	if ok {
-		data.Mail = mail
+		data.Mail = mails
 	}
 
 	err := a.inboxTemplate.Execute(w, data)
@@ -52,12 +66,39 @@ func (a *App) inbox(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) home(w http.ResponseWriter, r *http.Request) {
+	_ = r
 	data := pageData{
 		Email: util.GenerateEmail(a.Domain),
 	}
 
 	err := a.homeTemplate.Execute(w, data)
 
+	if err != nil {
+		log.Println(err)
+		return
+	}
+}
+
+func (a *App) mailRead(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	email := vars["email"]
+	id := vars["id"]
+
+	uid, err := uuid.Parse(id)
+	if err != nil {
+		return
+	}
+
+	mail := a.SmtpServer.Mail[email][uid]
+
+	data := pageData{
+		Subject:   "placeholder subject",
+		Sender:    mail.From,
+		Recipient: mail.To,
+		Html:      mail.HTML,
+	}
+
+	err = a.mailTemplate.Execute(w, data)
 	if err != nil {
 		log.Println(err)
 		return
@@ -76,10 +117,17 @@ func (a *App) templates() {
 		log.Fatalln(err)
 	}
 	a.homeTemplate = tmpl
+
+	tmpl, err = template.ParseFS(mailTemplate, "templates/mail.html")
+	if err != nil {
+		log.Fatalln(err)
+	}
+	a.mailTemplate = tmpl
 }
 
 func (a *App) routes() {
 	a.router.HandleFunc("/inbox/{email}", a.inbox)
+	a.router.HandleFunc("/inbox/{email}/{id}/", a.mailRead)
 	a.router.HandleFunc("/", a.home)
 }
 

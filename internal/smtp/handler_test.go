@@ -43,11 +43,13 @@ func TestSmtpServer(t *testing.T) {
 		t.Error("failed to read mail map")
 	}
 
-	mail := mails[0]
+	// mail := mails[0]
 
-	if mail.From != sender || mail.To != recipient || mail.Data != data+"\r\n" {
-		t.Errorf("invalid mail data")
-		t.Errorf("expected: %s %s %s", sender, recipient, data)
-		t.Errorf("actual: %s %s %s", mail.From, mail.To, mail.Data)
+	for _, mail := range mails {
+		if mail.From != sender || mail.To != recipient || mail.Data != data+"\r\n" {
+			t.Errorf("invalid mail data")
+			t.Errorf("expected: %s %s %s", sender, recipient, data)
+			t.Errorf("actual: %s %s %s", mail.From, mail.To, mail.Data)
+		}
 	}
 }

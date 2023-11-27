@@ -25,7 +25,7 @@ func TestTrafficSmtpServer(t *testing.T) {
 	data = append(data, "DATA\r\n")
 	data = append(data, "Subject: Hello World\r\n")
 	data = append(data, "From: <testing@localhost>\r\n")
-	data = append(data, "To: <recipient_email@example.com>\r\n")
+	data = append(data, "To: <testing@localhost>\r\n")
 	data = append(data, "Content-Type: text/html\r\n")
 	data = append(data, `
 <html>
@@ -37,7 +37,7 @@ func TestTrafficSmtpServer(t *testing.T) {
 	data = append(data, ".\r\n")
 
 	for _, line := range data {
-		log.Print(line)
+		//log.Print(line)
 		_, err := fmt.Fprintf(conn, line)
 		if err != nil {
 			return

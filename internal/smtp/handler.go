@@ -3,6 +3,7 @@ package smtp
 import (
 	"errors"
 	"fmt"
+	"github.com/google/uuid"
 	"html/template"
 	"io"
 	"log"
@@ -14,7 +15,7 @@ import (
 )
 
 type SmtpServer struct {
-	Mail   map[string][]Mail
+	Mail   map[string]map[uuid.UUID]Mail
 	Server *smtp.Server
 	Delay  time.Duration
 	mu     sync.RWMutex
@@ -39,15 +40,15 @@ func (s *SmtpServer) RemoveOldMail() {
 			s.mu.Lock()
 
 			for email, mails := range s.Mail {
-				var newMail []Mail
-				for _, mail := range mails {
-					if time.Now().Sub(mail.Creation) <= s.Delay {
-						mail.Timestamp = util.GenerateTimestamp(mail.Creation)
-						newMail = append(newMail, mail)
+				for id, mail := range mails {
+					m := s.Mail[email][id]
+					m.Timestamp = util.GenerateTimestamp(mail.Creation)
+					if time.Now().Sub(mail.Creation) >= s.Delay {
+						delete(mails, id)
+					} else {
+						s.Mail[email][id] = m
 					}
 				}
-
-				s.Mail[email] = newMail
 			}
 
 			s.mu.Unlock()
@@ -56,6 +57,8 @@ func (s *SmtpServer) RemoveOldMail() {
 }
 
 type Mail struct {
+	UUID      uuid.UUID
+	Subject   string
 	From      string
 	To        string
 	Data      string
@@ -66,7 +69,7 @@ type Mail struct {
 
 func NewSmtpServer(domain string, port int, delay int) *SmtpServer {
 	mailServer := &SmtpServer{
-		Delay: time.Minute * time.Duration(delay),
+		Delay: time.Duration(delay) * time.Minute,
 	}
 
 	s := smtp.NewServer(mailServer)
@@ -81,7 +84,7 @@ func NewSmtpServer(domain string, port int, delay int) *SmtpServer {
 	s.EnableSMTPUTF8 = true
 	s.EnableBINARYMIME = true
 	mailServer.Server = s
-	mailServer.Mail = make(map[string][]Mail)
+	mailServer.Mail = make(map[string]map[uuid.UUID]Mail)
 
 	return mailServer
 }
@@ -92,7 +95,6 @@ type smtpSession struct {
 }
 
 func (s *SmtpServer) NewSession(c *smtp.Conn) (smtp.Session, error) {
-	log.Println("recieving data")
 	_ = c
 
 	return &smtpSession{
@@ -131,7 +133,6 @@ func (s *smtpSession) Data(r io.Reader) error {
 		log.Println(err)
 		return err
 	} else {
-		log.Println("parsing")
 		html, err := util.ParseEmailData(b)
 		if err != nil {
 			return err
@@ -139,6 +140,8 @@ func (s *smtpSession) Data(r io.Reader) error {
 		s.mail.HTML = html
 
 		s.mail.Data = string(b)
+
+		s.mail.UUID = uuid.New()
 	}
 
 	s.mail.Creation = time.Now()
@@ -148,19 +151,19 @@ func (s *smtpSession) Data(r io.Reader) error {
 	return nil
 }
 
-func (s *smtpSession) Reset() {}
-
-func (s *smtpSession) Logout() error {
-	return nil
-}
-
 func (s *smtpSession) AppendMail() {
 	s.server.mu.Lock()
 	defer s.server.mu.Unlock()
 
 	if _, ok := s.server.Mail[s.mail.To]; !ok {
-		s.server.Mail[s.mail.To] = make([]Mail, 0)
-	}
+		s.server.Mail[s.mail.To] = make(map[uuid.UUID]Mail)
 
-	s.server.Mail[s.mail.To] = append(s.server.Mail[s.mail.To], s.mail)
+		s.server.Mail[s.mail.To][s.mail.UUID] = s.mail
+	}
+}
+
+func (s *smtpSession) Reset() {}
+
+func (s *smtpSession) Logout() error {
+	return nil
 }

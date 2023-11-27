@@ -4,6 +4,7 @@ go 1.21
 
 require (
 	github.com/emersion/go-smtp v0.19.0
+	github.com/google/uuid v1.4.0
 	github.com/gorilla/mux v1.8.1
 	github.com/jhillyerd/enmime v1.0.1
 )

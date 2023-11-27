@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ .Subject }}</title>
+</head>
+<body>
+    <h3>Subject: {{ .Subject }}</h3>
+    <h3>Sender: {{ .Sender }}</h3>
+    <h3>Recipient: {{ .Recipient }}</h3>
+    <a href="">delete</a>
+
+    {{ .Html }}
+</body>
+</html>

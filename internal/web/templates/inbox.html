@@ -10,7 +10,7 @@
     {{ if .Mail }}
         {{range .Mail }}
             <span>
-                <a href="">{{ .From }}</a>
+                <a href="/inbox/{{.To}}/{{ .UUID }}/">{{ .From }}</a>
                 - [subject] - {{ .Timestamp }}
             </span>
             <br>
