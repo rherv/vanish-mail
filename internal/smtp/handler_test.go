@@ -15,7 +15,7 @@ func TestSmtpServer(t *testing.T) {
 	recipient := "recipient@test.com"
 	data := "Hello World!"
 
-	mailServer := NewSmtpServer(domain, port)
+	mailServer := NewSmtpServer(domain, port, 10)
 	go mailServer.Start()
 
 	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", domain, port))

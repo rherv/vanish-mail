@@ -3,6 +3,7 @@ package smtp
 import (
 	"errors"
 	"fmt"
+	"html/template"
 	"io"
 	"log"
 	"placemail/internal/util"
@@ -15,6 +16,7 @@ import (
 type SmtpServer struct {
 	Mail   map[string][]Mail
 	Server *smtp.Server
+	Delay  time.Duration
 	mu     sync.RWMutex
 }
 
@@ -39,7 +41,7 @@ func (s *SmtpServer) RemoveOldMail() {
 			for email, mails := range s.Mail {
 				var newMail []Mail
 				for _, mail := range mails {
-					if time.Now().Sub(mail.Creation) <= time.Minute*10 {
+					if time.Now().Sub(mail.Creation) <= s.Delay {
 						mail.Timestamp = util.GenerateTimestamp(mail.Creation)
 						newMail = append(newMail, mail)
 					}
@@ -59,10 +61,13 @@ type Mail struct {
 	Data      string
 	Creation  time.Time
 	Timestamp string
+	HTML      template.HTML
 }
 
-func NewSmtpServer(domain string, port int) *SmtpServer {
-	mailServer := &SmtpServer{}
+func NewSmtpServer(domain string, port int, delay int) *SmtpServer {
+	mailServer := &SmtpServer{
+		Delay: time.Minute * time.Duration(delay),
+	}
 
 	s := smtp.NewServer(mailServer)
 
@@ -72,8 +77,9 @@ func NewSmtpServer(domain string, port int) *SmtpServer {
 	s.ReadTimeout = 10 * time.Second
 	s.MaxMessageBytes = 1024 * 1024
 	s.MaxRecipients = 50
-	s.AllowInsecureAuth = true
-
+	s.AuthDisabled = true
+	s.EnableSMTPUTF8 = true
+	s.EnableBINARYMIME = true
 	mailServer.Server = s
 	mailServer.Mail = make(map[string][]Mail)
 
@@ -86,6 +92,7 @@ type smtpSession struct {
 }
 
 func (s *SmtpServer) NewSession(c *smtp.Conn) (smtp.Session, error) {
+	log.Println("recieving data")
 	_ = c
 
 	return &smtpSession{
@@ -110,15 +117,27 @@ func (s *smtpSession) Mail(from string, opts *smtp.MailOptions) error {
 
 func (s *smtpSession) Rcpt(to string, opts *smtp.RcptOptions) error {
 	_ = opts
-
 	s.mail.To = to
+
+	if !util.IsValid(s.mail.To, s.server.Server.Domain) {
+		return errors.New("the received email is to the wrong domain: ")
+	}
+
 	return nil
 }
 
 func (s *smtpSession) Data(r io.Reader) error {
 	if b, err := io.ReadAll(r); err != nil {
+		log.Println(err)
 		return err
 	} else {
+		log.Println("parsing")
+		html, err := util.ParseEmailData(b)
+		if err != nil {
+			return err
+		}
+		s.mail.HTML = html
+
 		s.mail.Data = string(b)
 	}
 

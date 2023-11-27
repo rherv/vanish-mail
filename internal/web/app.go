@@ -11,17 +11,19 @@ import (
 	"placemail/internal/util"
 )
 
-type app struct {
-	smtpServer    *smtp.SmtpServer
+type App struct {
+	SmtpServer    *smtp.SmtpServer
 	router        *mux.Router
 	inboxTemplate *template.Template
 	homeTemplate  *template.Template
-	domain        string
+	Domain        string
+	delay         int
 }
 
 type pageData struct {
 	Email string
 	Mail  []smtp.Mail
+	Delay int
 }
 
 //go:embed templates/inbox.html
@@ -30,13 +32,14 @@ var inboxTemplate embed.FS
 //go:embed templates/home.html
 var homeTemplate embed.FS
 
-func (a *app) inbox(w http.ResponseWriter, r *http.Request) {
+func (a *App) inbox(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	var data pageData
 	email := vars["email"]
 	data.Email = email
+	data.Delay = a.delay
 
-	mail, ok := a.smtpServer.Mail[email]
+	mail, ok := a.SmtpServer.Mail[email]
 	if ok {
 		data.Mail = mail
 	}
@@ -48,9 +51,9 @@ func (a *app) inbox(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (a *app) home(w http.ResponseWriter, r *http.Request) {
+func (a *App) home(w http.ResponseWriter, r *http.Request) {
 	data := pageData{
-		Email: util.GenerateEmail(a.domain),
+		Email: util.GenerateEmail(a.Domain),
 	}
 
 	err := a.homeTemplate.Execute(w, data)
@@ -61,7 +64,7 @@ func (a *app) home(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (a *app) templates() {
+func (a *App) templates() {
 	tmpl, err := template.ParseFS(inboxTemplate, "templates/inbox.html")
 	if err != nil {
 		log.Fatalln(err)
@@ -75,26 +78,31 @@ func (a *app) templates() {
 	a.homeTemplate = tmpl
 }
 
-func (a *app) routes() {
+func (a *App) routes() {
 	a.router.HandleFunc("/inbox/{email}", a.inbox)
 	a.router.HandleFunc("/", a.home)
 }
 
-func Init(domain string, httpPort int, mailPort int) {
-	a := app{
-		smtpServer: smtp.NewSmtpServer(domain, mailPort),
+func Init(domain string, httpPort int, mailPort int, delay int) *App {
+	a := App{
+		SmtpServer: smtp.NewSmtpServer(domain, mailPort, delay),
 		router:     mux.NewRouter(),
+		delay:      delay,
 	}
 
-	a.domain = domain
-	a.smtpServer.Start()
+	a.Domain = domain
+	a.SmtpServer.Start()
 	a.routes()
 	a.templates()
 
 	addr := fmt.Sprintf("%s:%d", domain, httpPort)
 
-	err := http.ListenAndServe(addr, a.router)
-	if err != nil {
-		return
-	}
+	go func() {
+		err := http.ListenAndServe(addr, a.router)
+		if err != nil {
+			return
+		}
+	}()
+
+	return &a
 }

@@ -6,6 +6,7 @@
 </head>
 <body>
     <h1>Inbox for {{.Email}}</h1>
+    <h3>All email automatically deleted after {{ .Delay }} minutes.</h3>
     {{ if .Mail }}
         {{range .Mail }}
             <span>
@@ -15,7 +16,6 @@
             <br>
         {{end}}
     {{ else }}
-        <p>no mail</p>
         <p>[ mail will appear here automatically ]</p>
     {{ end }}
 

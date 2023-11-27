@@ -1,12 +1,26 @@
 package util
 
 import (
+	"bytes"
 	_ "embed"
 	"fmt"
+	"github.com/jhillyerd/enmime"
+	"html/template"
+	"log"
 	"math/rand"
 	"net/mail"
 	"strings"
 )
+
+func ParseEmailData(data []byte) (template.HTML, error) {
+	envelope, err := enmime.ReadEnvelope(bytes.NewReader(data))
+	if err != nil {
+		log.Println(err)
+		return "", err
+	}
+
+	return template.HTML(envelope.HTML), nil
+}
 
 //go:embed first-names.txt
 var nameList string
