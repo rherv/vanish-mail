@@ -68,7 +68,6 @@ func NewSmtpServer(domain string, port int, delay int) *SmtpServer {
 	s.MaxRecipients = 50
 	s.AuthDisabled = true
 	s.EnableSMTPUTF8 = true
-	s.EnableBINARYMIME = true
 	mailServer.Server = s
 	mailServer.Mail = make(map[string]map[uuid.UUID]Mail)
 

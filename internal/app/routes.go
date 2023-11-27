@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"log"
@@ -9,8 +10,9 @@ import (
 )
 
 func (a *App) routes() {
-	a.router.HandleFunc("/inbox/{email}", a.inbox)
-	a.router.HandleFunc("/inbox/{email}/{id}/", a.mailRead)
+	a.router.HandleFunc("/inbox/{email}/", a.inbox)
+	a.router.HandleFunc("/inbox/{email}/{id}/", a.mail)
+	a.router.HandleFunc("/inbox/{email}/{id}/delete/", a.delete)
 	a.router.HandleFunc("/", a.home)
 }
 
@@ -38,17 +40,22 @@ func (a *App) inbox(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (a *App) mailRead(w http.ResponseWriter, r *http.Request) {
+func (a *App) mail(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	email := vars["email"]
 	id := vars["id"]
 
 	uid, err := uuid.Parse(id)
 	if err != nil {
+		http.NotFound(w, r)
 		return
 	}
 
-	mail := a.SmtpServer.Mail[email][uid]
+	mail, ok := a.SmtpServer.Mail[email][uid]
+	if !ok {
+		//http.NotFound(w, r)
+		//return
+	}
 
 	data := pageData{
 		Subject:   mail.Subject,
@@ -59,9 +66,24 @@ func (a *App) mailRead(w http.ResponseWriter, r *http.Request) {
 
 	err = a.mailTemplate.Execute(w, data)
 	if err != nil {
-		log.Println(err)
+		http.NotFound(w, r)
 		return
 	}
+}
+func (a *App) delete(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	email := vars["email"]
+	id := vars["id"]
+
+	uid, err := uuid.Parse(id)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	delete(a.SmtpServer.Mail[email], uid)
+
+	http.Redirect(w, r, fmt.Sprintf("/inbox/%s/", email), 302)
 }
 
 func (a *App) home(w http.ResponseWriter, r *http.Request) {

@@ -4,6 +4,7 @@ import (
 	"flag"
 	"placemail/internal/app"
 	"placemail/internal/util"
+	"sync"
 )
 
 var domain = flag.String("domain", "localhost", "the domain to accept emails for")
@@ -16,4 +17,8 @@ func main() {
 
 	util.GenerateEmail(*domain)
 	app.Init(*domain, *httpPort, *smtpPort, *delay)
+
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	wg.Wait()
 }
