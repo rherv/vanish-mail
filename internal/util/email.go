@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"fmt"
 	"math/rand"
+	"net/mail"
 	"strings"
 )
 
@@ -22,4 +23,13 @@ func GenerateEmail(domain string) string {
 	email := fmt.Sprintf("%s.%s@%s", first, last, domain)
 
 	return email
+}
+
+func IsValid(email string, domain string) bool {
+	addr, err := mail.ParseAddress(email)
+	if err != nil {
+		return false
+	}
+
+	return strings.HasSuffix(addr.Address, domain)
 }
