@@ -12,14 +12,14 @@ import (
 	"strings"
 )
 
-func ParseEmailData(data []byte) (template.HTML, error) {
+func ParseEmailData(data []byte) (subject string, html template.HTML, err error) {
 	envelope, err := enmime.ReadEnvelope(bytes.NewReader(data))
 	if err != nil {
 		log.Println(err)
-		return "", err
+		return "", "", err
 	}
 
-	return template.HTML(envelope.HTML), nil
+	return envelope.GetHeader("Subject"), template.HTML(envelope.HTML), nil
 }
 
 //go:embed first-names.txt

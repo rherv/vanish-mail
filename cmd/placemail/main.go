@@ -2,8 +2,8 @@ package main
 
 import (
 	"flag"
+	"placemail/internal/app"
 	"placemail/internal/util"
-	"placemail/internal/web"
 )
 
 var domain = flag.String("domain", "localhost", "the domain to accept emails for")
@@ -15,5 +15,5 @@ func main() {
 	flag.Parse()
 
 	util.GenerateEmail(*domain)
-	web.Init(*domain, *httpPort, *smtpPort, *delay)
+	app.Init(*domain, *httpPort, *smtpPort, *delay)
 }

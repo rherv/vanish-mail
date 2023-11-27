@@ -1,0 +1,79 @@
+package app
+
+import (
+	"github.com/google/uuid"
+	"github.com/gorilla/mux"
+	"log"
+	"net/http"
+	"placemail/internal/util"
+)
+
+func (a *App) routes() {
+	a.router.HandleFunc("/inbox/{email}", a.inbox)
+	a.router.HandleFunc("/inbox/{email}/{id}/", a.mailRead)
+	a.router.HandleFunc("/", a.home)
+}
+
+func (a *App) inbox(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	var data pageData
+	email := vars["email"]
+	data.Email = email
+	data.Delay = a.delay
+
+	mail, ok := a.SmtpServer.Mail[email]
+	var mails []Mail
+	for _, value := range mail {
+		mails = append(mails, value)
+	}
+
+	if ok {
+		data.Mail = mails
+	}
+
+	err := a.inboxTemplate.Execute(w, data)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+}
+
+func (a *App) mailRead(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	email := vars["email"]
+	id := vars["id"]
+
+	uid, err := uuid.Parse(id)
+	if err != nil {
+		return
+	}
+
+	mail := a.SmtpServer.Mail[email][uid]
+
+	data := pageData{
+		Subject:   mail.Subject,
+		Sender:    mail.From,
+		Recipient: mail.To,
+		Html:      mail.HTML,
+	}
+
+	err = a.mailTemplate.Execute(w, data)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+}
+
+func (a *App) home(w http.ResponseWriter, r *http.Request) {
+	_ = r
+	data := pageData{
+		Email: util.GenerateEmail(a.Domain),
+	}
+
+	err := a.homeTemplate.Execute(w, data)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+}
