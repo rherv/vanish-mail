@@ -2,34 +2,29 @@ package app
 
 import (
 	"fmt"
-	"log"
 	"net"
+	"os"
+	"os/signal"
 	"strconv"
-	"sync"
+	"syscall"
 	"testing"
-	"time"
 )
 
-func TestTrafficSmtpServer(t *testing.T) {
+func TestTrafficEmailServer(t *testing.T) {
 	domain := "localhost"
 	httpPort := 8080
 	smtpPort := 1025
 	delay := 10
-	a := Init(domain, httpPort, smtpPort, delay)
-
-	start := time.Now()
+	_ = Init(domain, httpPort, smtpPort, delay)
 
 	for i := 0; i < 10; i++ {
 		SendEmail(domain, smtpPort, strconv.Itoa(i)+"test@mail.com", "testing@"+domain)
 	}
 
-	log.Println("elapsed:", time.Now().Sub(start))
+	done := make(chan os.Signal, 1)
+	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
-	_ = a
-
-	wg := sync.WaitGroup{}
-	wg.Add(1)
-	wg.Wait()
+	<-done
 }
 
 func SendEmail(domain string, port int, from string, to string) {

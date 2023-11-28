@@ -11,25 +11,25 @@ import (
 	"github.com/emersion/go-smtp"
 )
 
-type SmtpServer struct {
-	Mail   map[string]map[uuid.UUID]Mail
-	Server *smtp.Server
-	Delay  time.Duration
-	mu     sync.RWMutex
+type EmailServer struct {
+	Mail       map[string]map[uuid.UUID]Mail
+	SmtpServer *smtp.Server
+	Delay      time.Duration
+	mu         sync.RWMutex
 }
 
-func (s *SmtpServer) Start() {
+func (s *EmailServer) Start() {
 	s.RemoveOldMail()
 
 	go func() {
-		log.Println("Starting server at", s.Server.Addr)
-		if err := s.Server.ListenAndServe(); err != nil {
+		log.Println("Starting server at", s.SmtpServer.Addr)
+		if err := s.SmtpServer.ListenAndServe(); err != nil {
 			log.Fatal(err)
 		}
 	}()
 }
 
-func (s *SmtpServer) RemoveOldMail() {
+func (s *EmailServer) RemoveOldMail() {
 	go func() {
 		for {
 			time.Sleep(time.Second * 10)
@@ -53,8 +53,8 @@ func (s *SmtpServer) RemoveOldMail() {
 	}()
 }
 
-func NewSmtpServer(domain string, port int, delay int) *SmtpServer {
-	mailServer := &SmtpServer{
+func NewSmtpServer(domain string, port int, delay int) *EmailServer {
+	mailServer := &EmailServer{
 		Delay: time.Duration(delay) * time.Minute,
 	}
 
@@ -68,7 +68,7 @@ func NewSmtpServer(domain string, port int, delay int) *SmtpServer {
 	s.MaxRecipients = 50
 	s.AuthDisabled = true
 	s.EnableSMTPUTF8 = true
-	mailServer.Server = s
+	mailServer.SmtpServer = s
 	mailServer.Mail = make(map[string]map[uuid.UUID]Mail)
 
 	return mailServer

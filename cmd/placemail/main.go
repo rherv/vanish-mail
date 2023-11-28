@@ -2,9 +2,11 @@ package main
 
 import (
 	"flag"
+	"os"
+	"os/signal"
 	"placemail/internal/app"
 	"placemail/internal/util"
-	"sync"
+	"syscall"
 )
 
 var domain = flag.String("domain", "localhost", "the domain to accept emails for")
@@ -18,7 +20,8 @@ func main() {
 	util.GenerateEmail(*domain)
 	app.Init(*domain, *httpPort, *smtpPort, *delay)
 
-	wg := sync.WaitGroup{}
-	wg.Add(1)
-	wg.Wait()
+	done := make(chan os.Signal, 1)
+	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+
+	<-done
 }

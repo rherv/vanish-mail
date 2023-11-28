@@ -3,33 +3,20 @@ package app
 import (
 	"embed"
 	"fmt"
-	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"html/template"
 	"log"
 	"net/http"
-	"time"
 )
 
 type App struct {
-	SmtpServer    *SmtpServer
+	SmtpServer    *EmailServer
 	router        *mux.Router
 	inboxTemplate *template.Template
 	homeTemplate  *template.Template
 	mailTemplate  *template.Template
 	Domain        string
 	delay         int
-}
-
-type Mail struct {
-	UUID      uuid.UUID
-	Subject   string
-	From      string
-	To        string
-	Timestamp string
-	Data      []byte
-	Creation  time.Time
-	HTML      template.HTML
 }
 
 type pageData struct {
@@ -42,33 +29,22 @@ type pageData struct {
 	Html      template.HTML
 }
 
-//go:embed templates/inbox.html
-var inboxTemplate embed.FS
+//go:embed templates/inbox.html templates/home.html templates/mail.html
+var fileSystem embed.FS
 
-//go:embed templates/home.html
-var homeTemplate embed.FS
+func (a *App) loadTemplate(pattern string) *template.Template {
+	tmpl, err := template.ParseFS(fileSystem, pattern)
+	if err != nil {
+		log.Fatalln(err)
+	}
 
-//go:embed templates/mail.html
-var mailTemplate embed.FS
+	return tmpl
+}
 
 func (a *App) templates() {
-	tmpl, err := template.ParseFS(inboxTemplate, "templates/inbox.html")
-	if err != nil {
-		log.Fatalln(err)
-	}
-	a.inboxTemplate = tmpl
-
-	tmpl, err = template.ParseFS(homeTemplate, "templates/home.html")
-	if err != nil {
-		log.Fatalln(err)
-	}
-	a.homeTemplate = tmpl
-
-	tmpl, err = template.ParseFS(mailTemplate, "templates/mail.html")
-	if err != nil {
-		log.Fatalln(err)
-	}
-	a.mailTemplate = tmpl
+	a.inboxTemplate = a.loadTemplate("templates/inbox.html")
+	a.homeTemplate = a.loadTemplate("templates/html.html")
+	a.mailTemplate = a.loadTemplate("templates/mail.html")
 }
 
 func Init(domain string, httpPort int, mailPort int, delay int) *App {
@@ -88,6 +64,7 @@ func Init(domain string, httpPort int, mailPort int, delay int) *App {
 	go func() {
 		err := http.ListenAndServe(addr, a.router)
 		if err != nil {
+			log.Fatalln(err)
 			return
 		}
 	}()

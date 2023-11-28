@@ -1,20 +1,25 @@
 package app
 
 import (
-	"errors"
+	"bytes"
 	"github.com/emersion/go-smtp"
 	"github.com/google/uuid"
+	"github.com/jhillyerd/enmime"
+	"html/template"
 	"io"
+	"log"
 	"placemail/internal/util"
+	"sync"
 	"time"
 )
 
 type SmtpSession struct {
 	mail   Mail
-	server *SmtpServer
+	server *EmailServer
+	mu     sync.Mutex
 }
 
-func (s *SmtpServer) NewSession(conn *smtp.Conn) (smtp.Session, error) {
+func (s *EmailServer) NewSession(conn *smtp.Conn) (smtp.Session, error) {
 	return &SmtpSession{
 		mail:   Mail{},
 		server: s,
@@ -32,34 +37,44 @@ func (s *SmtpSession) AuthPlain(username, password string) error {
 }
 
 func (s *SmtpSession) Mail(from string, opts *smtp.MailOptions) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	s.mail.From = from
 	return nil
 }
 
 func (s *SmtpSession) Rcpt(to string, opts *smtp.RcptOptions) error {
-	s.mail.To = to
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
-	if !util.IsValid(s.mail.To, s.server.Server.Domain) {
-		return errors.New("the received email is to the wrong domain: ")
+	err := s.mail.SetRecipient(to, s.server.SmtpServer.Domain)
+	if err != nil {
+		return err
 	}
 
 	return nil
 }
 
 func (s *SmtpSession) Data(r io.Reader) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	if data, err := io.ReadAll(r); err != nil {
 		return err
 	} else {
-		subject, html, err := util.ParseEmailData(data)
+		//subject, html, err := util.ParseEmailData(data)
 		if err != nil {
 			return err
 		}
 
-		s.mail.Subject = subject
-		s.mail.HTML = html
-		s.mail.UUID = uuid.New()
+		err := s.ParseData(data)
+		if err != nil {
+			return err
+		}
 	}
 
+	s.mail.UUID = uuid.New()
 	s.mail.Creation = time.Now()
 	s.mail.Timestamp = util.GenerateTimestamp(s.mail.Creation)
 	s.AppendMail()
@@ -67,7 +82,23 @@ func (s *SmtpSession) Data(r io.Reader) error {
 	return nil
 }
 
+func (s *SmtpSession) ParseData(data []byte) error {
+	envelope, err := enmime.ReadEnvelope(bytes.NewReader(data))
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
+	s.mail.Subject = envelope.GetHeader("Subject")
+	s.mail.HTML = template.HTML(envelope.HTML)
+
+	return nil
+}
+
 func (s *SmtpSession) AppendMail() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	s.server.mu.Lock()
 	defer s.server.mu.Unlock()
 
