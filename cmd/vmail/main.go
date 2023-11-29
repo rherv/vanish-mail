@@ -4,9 +4,9 @@ import (
 	"flag"
 	"os"
 	"os/signal"
-	"placemail/internal/app"
-	"placemail/internal/util"
 	"syscall"
+	"vmail/internal/app"
+	"vmail/internal/util"
 )
 
 var domain = flag.String("domain", "localhost", "the domain to accept emails for")

@@ -1,4 +1,4 @@
-module placemail
+module vmail
 
 go 1.21
 

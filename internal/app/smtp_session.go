@@ -8,9 +8,9 @@ import (
 	"html/template"
 	"io"
 	"log"
-	"placemail/internal/util"
 	"sync"
 	"time"
+	"vmail/internal/util"
 )
 
 type SmtpSession struct {

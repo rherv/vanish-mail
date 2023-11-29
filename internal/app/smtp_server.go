@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"log"
-	"placemail/internal/util"
 	"sync"
 	"time"
+	"vmail/internal/util"
 
 	"github.com/emersion/go-smtp"
 )

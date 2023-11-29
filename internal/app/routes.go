@@ -6,7 +6,7 @@ import (
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
-	"placemail/internal/util"
+	"vmail/internal/util"
 )
 
 func (a *App) routes() {
