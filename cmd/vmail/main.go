@@ -9,6 +9,8 @@ import (
 	"vmail/internal/util"
 )
 
+//go:generate npm run build
+
 var domain = flag.String("domain", "localhost", "the domain to accept emails for")
 var httpPort = flag.Int("http", 8080, "http service address")
 var smtpPort = flag.Int("smtp", 1025, "smtp service address")

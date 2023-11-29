@@ -13,7 +13,18 @@ func (a *App) routes() {
 	a.router.HandleFunc("/inbox/{email}/", a.inbox)
 	a.router.HandleFunc("/inbox/{email}/{id}/", a.mail)
 	a.router.HandleFunc("/inbox/{email}/{id}/delete/", a.delete)
+	a.router.HandleFunc("/tailwind.css", a.tailwind)
 	a.router.HandleFunc("/", a.home)
+}
+
+func (a *App) tailwind(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/css")
+
+	_, err := w.Write(a.css)
+	if err != nil {
+		log.Println(err)
+		return
+	}
 }
 
 func (a *App) inbox(w http.ResponseWriter, r *http.Request) {

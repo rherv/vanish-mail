@@ -1,0 +1,12 @@
+{
+  "name": "vmail",
+  "version": "1.0.0",
+  "description": "A temporary email inbox generator written in Go. This project is inspired by: https://tmail.link",
+  "main": "",
+  "scripts": {
+    "build": "npx tailwindcss build -o internal/app/templates/tailwind.css",
+    "watch": "npx tailwindcss build -o internal/app/templates/tailwind.css --watch"
+  },
+  "author": "Rafael H.",
+  "license": "ISC"
+}
