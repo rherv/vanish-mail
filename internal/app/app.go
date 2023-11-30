@@ -18,6 +18,8 @@ type App struct {
 	css           []byte
 	Domain        string
 	delay         int
+	certFile      string
+	keyFile       string
 }
 
 type pageData struct {
@@ -55,11 +57,13 @@ func (a *App) templates() {
 	a.css = css
 }
 
-func Init(domain string, httpPort int, mailPort int, delay int) *App {
+func Init(domain string, httpPort int, mailPort int, delay int, certFile string, keyFile string) *App {
 	a := App{
-		SmtpServer: NewSmtpServer(domain, mailPort, delay),
+		SmtpServer: NewSmtpServer(domain, mailPort, delay, certFile, keyFile),
 		router:     mux.NewRouter(),
 		delay:      delay,
+		certFile:   certFile,
+		keyFile:    keyFile,
 	}
 
 	a.Domain = domain
@@ -70,7 +74,7 @@ func Init(domain string, httpPort int, mailPort int, delay int) *App {
 	addr := fmt.Sprintf("%s:%d", domain, httpPort)
 
 	go func() {
-		err := http.ListenAndServe(addr, a.router)
+		err := http.ListenAndServeTLS(addr, a.certFile, a.keyFile, a.router)
 		if err != nil {
 			log.Fatalln(err)
 			return

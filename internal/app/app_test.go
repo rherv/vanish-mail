@@ -12,10 +12,10 @@ import (
 
 func TestTrafficEmailServer(t *testing.T) {
 	domain := "localhost"
-	httpPort := 8080
-	smtpPort := 1025
+	httpPort := 443
+	smtpPort := 587
 	delay := 10
-	Init(domain, httpPort, smtpPort, delay)
+	Init(domain, httpPort, smtpPort, delay, "server.crt", "server.key")
 
 	for i := 0; i < 100; i++ {
 		SendEmail(domain, smtpPort, "test@mail.com", "testing@"+domain)
