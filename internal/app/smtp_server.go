@@ -1,6 +1,7 @@
 package app
 
 import (
+	"crypto/tls"
 	"fmt"
 	"github.com/google/uuid"
 	"log"
@@ -53,9 +54,18 @@ func (s *EmailServer) RemoveOldMail() {
 	}()
 }
 
-func NewSmtpServer(domain string, port int, delay int) *EmailServer {
+func NewSmtpServer(domain string, port int, delay int, certFile string, keyFile string) *EmailServer {
 	mailServer := &EmailServer{
 		Delay: time.Duration(delay) * time.Minute,
+	}
+
+	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
+	if err != nil {
+		log.Fatal("Error loading certificate:", err)
+	}
+
+	tlsConfig := &tls.Config{
+		Certificates: []tls.Certificate{cert},
 	}
 
 	s := smtp.NewServer(mailServer)
@@ -68,6 +78,8 @@ func NewSmtpServer(domain string, port int, delay int) *EmailServer {
 	s.MaxRecipients = 50
 	s.AuthDisabled = true
 	s.EnableSMTPUTF8 = true
+	s.TLSConfig = tlsConfig
+
 	mailServer.SmtpServer = s
 	mailServer.Mail = make(map[string]map[uuid.UUID]Mail)
 
