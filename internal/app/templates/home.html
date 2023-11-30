@@ -2,18 +2,23 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Placemail</title>
+    <title>vmail</title>
     <link rel="stylesheet" href="/tailwind.css" />
 </head>
-<body>
-    <h1>Welcome to Placemail</h1>
-
-    <h2>random inbox:</h2>
-
-    <span>
+<body class="latte m-4">
+    <div class="flex items-center justify-between">
+        <div class="flex-none">
+            <h1 class="text-3xl bg-gradient-to-r from-ctp-lavender to-ctp-mauve inline-block text-transparent bg-clip-text">Welcome to VanishMail</h1>
+        </div>
+        <div class="flex-auto flex items-center justify-end space-x-4">
+            <a class="text-xl pl-3 pt-3 text-ctp-text underline" href="https://github.com/rherv/vanish-mail">source code</a>
+        </div>
+    </div>
+    <hr class="my-4 border-t-2 border-gray-300">
+    <h2 class="text-xl font-bold text-ctp-text">random inbox:</h2>
+    <span class="text-lg text-ctp-text">
         {{ .Email }}
-
-        <a href="/inbox/{{ .Email }}/"> (view inbox)</a>
+        <a href="/inbox/{{ .Email }}/" class="underline text-ctp-blue hover:text-ctp-mauve">view</a>
     </span>
 </body>
 </html>

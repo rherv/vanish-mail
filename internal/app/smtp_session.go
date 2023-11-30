@@ -1,13 +1,12 @@
 package app
 
 import (
-	"bytes"
+	"errors"
 	"github.com/emersion/go-smtp"
 	"github.com/google/uuid"
 	"github.com/jhillyerd/enmime"
 	"html/template"
 	"io"
-	"log"
 	"sync"
 	"time"
 	"vmail/internal/util"
@@ -60,18 +59,21 @@ func (s *SmtpSession) Data(r io.Reader) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if data, err := io.ReadAll(r); err != nil {
+	envelope, err := enmime.ReadEnvelope(r)
+	if err != nil {
 		return err
 	} else {
-		//subject, html, err := util.ParseEmailData(data)
-		if err != nil {
-			return err
+		contentType := envelope.GetHeader("Content-Type")
+
+		if util.IsHtml(contentType) {
+			s.mail.HTML = template.HTML(envelope.HTML)
+		} else if util.IsText(contentType) {
+			s.mail.HTML = template.HTML(envelope.Text)
+		} else {
+			return errors.New("invalid content-type")
 		}
 
-		err := s.ParseData(data)
-		if err != nil {
-			return err
-		}
+		s.mail.Subject = envelope.GetHeader("Subject")
 	}
 
 	s.mail.UUID = uuid.New()
@@ -82,26 +84,7 @@ func (s *SmtpSession) Data(r io.Reader) error {
 	return nil
 }
 
-func (s *SmtpSession) ParseData(data []byte) error {
-	envelope, err := enmime.ReadEnvelope(bytes.NewReader(data))
-	if err != nil {
-		log.Println(err)
-		return err
-	}
-
-	s.mail.Subject = envelope.GetHeader("Subject")
-	s.mail.HTML = template.HTML(envelope.HTML)
-
-	return nil
-}
-
 func (s *SmtpSession) AppendMail() {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	s.server.mu.Lock()
-	defer s.server.mu.Unlock()
-
 	if _, ok := s.server.Mail[s.mail.To]; !ok {
 		s.server.Mail[s.mail.To] = make(map[uuid.UUID]Mail)
 	}

@@ -8,5 +8,8 @@
     "watch": "npx tailwindcss build -o internal/app/templates/tailwind.css --watch"
   },
   "author": "Rafael H.",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "@catppuccin/tailwindcss": "^0.1.6"
+  }
 }

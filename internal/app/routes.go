@@ -13,6 +13,7 @@ func (a *App) routes() {
 	a.router.HandleFunc("/inbox/{email}/", a.inbox)
 	a.router.HandleFunc("/inbox/{email}/{id}/", a.mail)
 	a.router.HandleFunc("/inbox/{email}/{id}/delete/", a.delete)
+	a.router.HandleFunc("/inbox/{email}/{id}/back/", a.back)
 	a.router.HandleFunc("/tailwind.css", a.tailwind)
 	a.router.HandleFunc("/", a.home)
 }
@@ -28,8 +29,8 @@ func (a *App) tailwind(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) inbox(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
 	var data pageData
+	vars := mux.Vars(r)
 	email := vars["email"]
 	data.Email = email
 	data.Delay = a.delay
@@ -81,6 +82,7 @@ func (a *App) mail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
+
 func (a *App) delete(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	email := vars["email"]
@@ -93,6 +95,13 @@ func (a *App) delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	delete(a.SmtpServer.Mail[email], uid)
+
+	http.Redirect(w, r, fmt.Sprintf("/inbox/%s/", email), 302)
+}
+
+func (a *App) back(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	email := vars["email"]
 
 	http.Redirect(w, r, fmt.Sprintf("/inbox/%s/", email), 302)
 }

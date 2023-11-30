@@ -2,10 +2,10 @@ package app
 
 import (
 	"fmt"
-	"net"
+	"net/smtp"
 	"os"
 	"os/signal"
-	"strconv"
+	"strings"
 	"syscall"
 	"testing"
 )
@@ -15,10 +15,10 @@ func TestTrafficEmailServer(t *testing.T) {
 	httpPort := 8080
 	smtpPort := 1025
 	delay := 10
-	_ = Init(domain, httpPort, smtpPort, delay)
+	Init(domain, httpPort, smtpPort, delay)
 
-	for i := 0; i < 10; i++ {
-		SendEmail(domain, smtpPort, strconv.Itoa(i)+"test@mail.com", "testing@"+domain)
+	for i := 0; i < 100; i++ {
+		SendEmail(domain, smtpPort, "test@mail.com", "testing@"+domain)
 	}
 
 	done := make(chan os.Signal, 1)
@@ -28,39 +28,34 @@ func TestTrafficEmailServer(t *testing.T) {
 }
 
 func SendEmail(domain string, port int, from string, to string) {
-	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", domain, port))
+	subject := "Test Subject"
+	body := "This is the body of the email."
+
+	message := composeMessage(from, to, subject, body)
+
+	err := smtp.SendMail(fmt.Sprintf("%s:%d", domain, port), nil, from, []string{to}, []byte(message))
+
 	if err != nil {
 		return
 	}
+}
 
-	var data []string
-	data = append(data, fmt.Sprintf("EHLO %s\r\n", domain))
-	data = append(data, fmt.Sprintf("MAIL FROM:<%s>\r\n", from))
-	data = append(data, fmt.Sprintf("RCPT TO:<%s>\r\n", to))
-	data = append(data, "DATA\r\n")
-	data = append(data, "Subject: Hello World\r\n")
-	data = append(data, fmt.Sprintf("From: <%s>\r\n", from))
-	data = append(data, fmt.Sprintf("To: <%s>\r\n", to))
-	data = append(data, "Content-Type: text/html\r\n")
-	data = append(data, `
-<html>
-	<body>
-		<h1> hello! </h1>
-		<p>This is your HTML content.</p>
-	</body>
-</html>`+"\r\n")
-
-	data = append(data, ".\r\n")
-
-	for _, line := range data {
-		_, err := fmt.Fprintf(conn, line)
-		if err != nil {
-			return
-		}
+func composeMessage(from, to, subject, body string) string {
+	headers := map[string]string{
+		"From":         from,
+		"To":           to,
+		"Subject":      subject,
+		"MIME-version": "1.0",
+		"Content-Type": "text/plain; charset=\"UTF-8\"",
 	}
 
-	err = conn.Close()
-	if err != nil {
-		return
+	var messageBuilder strings.Builder
+
+	for key, value := range headers {
+		messageBuilder.WriteString(fmt.Sprintf("%s: %s\r\n", key, value))
 	}
+
+	messageBuilder.WriteString("\r\n" + body)
+
+	return messageBuilder.String()
 }

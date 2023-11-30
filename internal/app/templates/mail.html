@@ -2,14 +2,22 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>{{ .Subject }}</title>
+    <title>vmail | {{ .Subject }}</title>
     <link rel="stylesheet" href="/tailwind.css" />
 </head>
-<body>
+<body class="latte m-4">
+    <div class="flex items-center justify-between">
+        <div class="flex-none">
+            <a href="back/" class="underline text-xl text-ctp-text pt-4 pr-2">back</a>
+            <a href="delete/" class="underline text-xl text-ctp-text pt-4">delete</a>
+        </div>
+        <div class="flex-auto flex items-center justify-end space-x-4">
+        </div>
+    </div>
+    <hr class="my-4 border-t-2 border-gray-300">
     <h3>Subject: {{ .Subject }}</h3>
     <h3>Sender: {{ .Sender }}</h3>
     <h3>Recipient: {{ .Recipient }}</h3>
-    <a href="delete/">delete</a>
 
     {{ .Html }}
 </body>
