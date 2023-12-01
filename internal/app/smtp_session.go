@@ -1,7 +1,6 @@
 package app
 
 import (
-	"errors"
 	"github.com/emersion/go-smtp"
 	"github.com/google/uuid"
 	"github.com/jhillyerd/enmime"
@@ -23,16 +22,6 @@ func (s *EmailServer) NewSession(conn *smtp.Conn) (smtp.Session, error) {
 		mail:   Mail{},
 		server: s,
 	}, nil
-}
-
-func (s *SmtpSession) AuthPlain(username, password string) error {
-	/*
-		if username != "username" || password != "password" {
-			return errors.New("invalid username or password")
-		}
-	*/
-
-	return nil
 }
 
 func (s *SmtpSession) Mail(from string, opts *smtp.MailOptions) error {
@@ -63,15 +52,7 @@ func (s *SmtpSession) Data(r io.Reader) error {
 	if err != nil {
 		return err
 	} else {
-		contentType := envelope.GetHeader("Content-Type")
-
-		if util.IsHtml(contentType) {
-			s.mail.HTML = template.HTML(envelope.HTML)
-		} else if util.IsText(contentType) {
-			s.mail.HTML = template.HTML(envelope.Text)
-		} else {
-			return errors.New("invalid content-type")
-		}
+		s.mail.HTML = template.HTML(envelope.HTML)
 
 		s.mail.Subject = envelope.GetHeader("Subject")
 	}
@@ -95,5 +76,14 @@ func (s *SmtpSession) AppendMail() {
 func (s *SmtpSession) Reset() {}
 
 func (s *SmtpSession) Logout() error {
+	return nil
+}
+
+func (s *SmtpSession) AuthPlain(username, password string) error {
+	/*
+		if username != "username" || password != "password" {
+			return errors.New("Invalid username or password")
+		}
+	*/
 	return nil
 }

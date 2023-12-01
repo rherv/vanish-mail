@@ -76,8 +76,8 @@ func NewSmtpServer(domain string, port int, delay int, certFile string, keyFile 
 	s.ReadTimeout = 10 * time.Second
 	s.MaxMessageBytes = 1024 * 1024
 	s.MaxRecipients = 50
-	s.AuthDisabled = true
-	s.EnableSMTPUTF8 = true
+	// s.AuthDisabled = true
+	// s.EnableSMTPUTF8 = true
 	s.TLSConfig = tlsConfig
 
 	mailServer.SmtpServer = s
