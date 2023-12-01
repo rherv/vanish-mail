@@ -6,6 +6,7 @@ import (
 	"github.com/jhillyerd/enmime"
 	"html/template"
 	"io"
+	"log"
 	"sync"
 	"time"
 	"vmail/internal/util"
@@ -18,6 +19,7 @@ type SmtpSession struct {
 }
 
 func (s *EmailServer) NewSession(conn *smtp.Conn) (smtp.Session, error) {
+	log.Println("new session made")
 	return &SmtpSession{
 		mail:   Mail{},
 		server: s,
@@ -28,6 +30,7 @@ func (s *SmtpSession) Mail(from string, opts *smtp.MailOptions) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	log.Println("Receiving Email from", from)
 	s.mail.From = from
 	return nil
 }
@@ -38,6 +41,7 @@ func (s *SmtpSession) Rcpt(to string, opts *smtp.RcptOptions) error {
 
 	err := s.mail.SetRecipient(to, s.server.SmtpServer.Domain)
 	if err != nil {
+		log.Println("Recipient Error: ", err)
 		return err
 	}
 
@@ -50,6 +54,7 @@ func (s *SmtpSession) Data(r io.Reader) error {
 
 	envelope, err := enmime.ReadEnvelope(r)
 	if err != nil {
+		log.Println(err)
 		return err
 	} else {
 		s.mail.HTML = template.HTML(envelope.HTML)
@@ -80,6 +85,8 @@ func (s *SmtpSession) Logout() error {
 }
 
 func (s *SmtpSession) AuthPlain(username, password string) error {
+	log.Println("username: ", username)
+	log.Println("password: ", password)
 	/*
 		if username != "username" || password != "password" {
 			return errors.New("Invalid username or password")
