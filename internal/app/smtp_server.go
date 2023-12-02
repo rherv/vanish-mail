@@ -82,7 +82,6 @@ func NewSmtpServer(domain string, port int, delay int, certFile string, keyFile 
 	s.EnableSMTPUTF8 = true
 	s.AllowInsecureAuth = false
 	s.AuthDisabled = true
-	s.ErrorLog = &log.Logger{}
 
 	//s.EnableBINARYMIME = true
 	// s.AuthDisabled = true
