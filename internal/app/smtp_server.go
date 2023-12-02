@@ -24,7 +24,7 @@ func (s *EmailServer) Start() {
 
 	go func() {
 		log.Println("Starting server at", s.SmtpServer.Addr)
-		if err := s.SmtpServer.ListenAndServe(); err != nil {
+		if err := s.SmtpServer.ListenAndServeTLS(); err != nil {
 			log.Fatal(err)
 		}
 	}()
@@ -81,7 +81,8 @@ func NewSmtpServer(domain string, port int, delay int, certFile string, keyFile 
 	s.EnableDSN = true
 	s.EnableSMTPUTF8 = true
 	s.AllowInsecureAuth = false
-	s.AuthDisabled = false
+	s.AuthDisabled = true
+	s.ErrorLog = &log.Logger{}
 
 	//s.EnableBINARYMIME = true
 	// s.AuthDisabled = true
