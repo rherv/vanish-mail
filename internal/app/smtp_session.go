@@ -54,7 +54,7 @@ func (s *SmtpSession) Data(r io.Reader) error {
 
 	envelope, err := enmime.ReadEnvelope(r)
 	if err != nil {
-		log.Println(err)
+		log.Println("Envelope Reading Error:", err)
 		return err
 	} else {
 		s.mail.HTML = template.HTML(envelope.HTML)

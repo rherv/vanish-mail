@@ -74,12 +74,9 @@ func NewSmtpServer(domain string, port int, delay int, certFile string, keyFile 
 	s.Domain = domain
 	s.WriteTimeout = 10 * time.Second
 	s.ReadTimeout = 10 * time.Second
-	s.MaxMessageBytes = 1024 * 1024 * 1024
+	s.MaxMessageBytes = 50 * 1024 * 1024
 	s.MaxLineLength = 2000
 	s.MaxRecipients = 50
-	s.EnableREQUIRETLS = true
-	s.EnableDSN = true
-	s.EnableSMTPUTF8 = true
 	s.AllowInsecureAuth = false
 	s.AuthDisabled = true
 
