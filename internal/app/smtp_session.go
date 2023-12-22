@@ -18,7 +18,7 @@ type SmtpSession struct {
 	mu     sync.Mutex
 }
 
-func (s *EmailServer) NewSession(conn *smtp.Conn) (smtp.Session, error) {
+func (s *EmailServer) NewSession(_ *smtp.Conn) (smtp.Session, error) {
 	log.Println("new session made")
 	return &SmtpSession{
 		mail:   Mail{},
