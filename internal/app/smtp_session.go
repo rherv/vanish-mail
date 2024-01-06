@@ -18,7 +18,7 @@ type SmtpSession struct {
 	mu     sync.Mutex
 }
 
-func (s *EmailServer) NewSession(conn *smtp.Conn) (smtp.Session, error) {
+func (s *EmailServer) NewSession(_ *smtp.Conn) (smtp.Session, error) {
 	log.Println("new session made")
 	return &SmtpSession{
 		mail:   Mail{},
@@ -54,7 +54,7 @@ func (s *SmtpSession) Data(r io.Reader) error {
 
 	envelope, err := enmime.ReadEnvelope(r)
 	if err != nil {
-		log.Println(err)
+		log.Println("Envelope Reading Error:", err)
 		return err
 	} else {
 		s.mail.HTML = template.HTML(envelope.HTML)
