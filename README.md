@@ -17,7 +17,7 @@ cd vanish-mail
 ```
 ### Build the application:
 ```bash
-go build
+go build cmd/vmail/main.go
 ```
 
 ## Usage
