@@ -1,6 +1,7 @@
 package app
 
 import (
+	"crypto/tls"
 	"fmt"
 	"github.com/google/uuid"
 	"log"
@@ -22,7 +23,7 @@ func (s *EmailServer) Start() {
 	s.RemoveOldMail()
 
 	go func() {
-		log.Println("Starting server at", s.SmtpServer.Addr)
+		log.Println("Starting SMTP server at", s.SmtpServer.Addr)
 		if err := s.SmtpServer.ListenAndServe(); err != nil {
 			log.Fatal(err)
 		}
@@ -53,9 +54,18 @@ func (s *EmailServer) RemoveOldMail() {
 	}()
 }
 
-func NewSmtpServer(domain string, port int, delay int) *EmailServer {
+func NewSmtpServer(domain string, port int, delay int, certFile string, keyFile string) *EmailServer {
 	mailServer := &EmailServer{
 		Delay: time.Duration(delay) * time.Minute,
+	}
+
+	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
+	if err != nil {
+		log.Fatal("Error loading certificate:", err)
+	}
+
+	tlsConfig := &tls.Config{
+		Certificates: []tls.Certificate{cert},
 	}
 
 	s := smtp.NewServer(mailServer)
@@ -68,11 +78,8 @@ func NewSmtpServer(domain string, port int, delay int) *EmailServer {
 	s.MaxLineLength = 2000
 	s.MaxRecipients = 50
 	s.AuthDisabled = false
-	s.AllowInsecureAuth = true
-
-	//s.EnableBINARYMIME = true
-	// s.AuthDisabled = true
-	// s.EnableSMTPUTF8 = true
+	s.AllowInsecureAuth = false
+	s.TLSConfig = tlsConfig
 
 	mailServer.SmtpServer = s
 	mailServer.Mail = make(map[string]map[uuid.UUID]Mail)
