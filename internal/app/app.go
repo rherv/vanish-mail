@@ -73,7 +73,7 @@ func Init(domain string, httpPort int, mailPort int, delay int, certFile string,
 	addr := fmt.Sprintf("%s:%d", domain, httpPort)
 
 	go func() {
-		err := http.ListenAndServe(addr, a.router)
+		err := http.ListenAndServeTLS(addr, certFile, keyFile, a.router)
 		if err != nil {
 			log.Fatalln(err)
 			return
